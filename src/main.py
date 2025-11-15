@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.v1.endpoints import documents, fraud_reports, verification
+from src.api.v1.endpoints import agencies, documents, fraud_reports, verification
 from src.core.config import settings
 from src.db.base import engine
 from src.utils.constants import config
@@ -62,6 +62,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(agencies.router, prefix=settings.API_V1_PREFIX)
 app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
 app.include_router(fraud_reports.router, prefix=settings.API_V1_PREFIX)
 app.include_router(verification.router, prefix=settings.API_V1_PREFIX)
