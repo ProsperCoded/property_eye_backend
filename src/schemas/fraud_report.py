@@ -100,7 +100,7 @@ class ConfidenceDistribution(BaseModel):
                 "medium_confidence": 28,
                 "low_confidence": 5,
             }
-        }``
+        }
 
 
 class SuspiciousMatchSummary(BaseModel):
