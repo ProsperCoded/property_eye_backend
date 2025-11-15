@@ -213,3 +213,9 @@ __marimo__/
 
 /temp
 data/pp-2025.csv
+
+# Project-specific
+fraud_detection.db
+fraud_detection.db-journal
+data/ppd/*.parquet
+scripts/__pycache__/
