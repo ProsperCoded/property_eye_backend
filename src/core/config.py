@@ -31,9 +31,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./fraud_detection.db"
 
     # PPD Storage Configuration
-    PPD_VOLUME_PATH: str = "./data/ppd"
+    # For Railway: use /data (mounted volume), for local: use ./data/ppd
+    PPD_VOLUME_PATH: str = "/data/ppd"
     PPD_COMPRESSION: str = "snappy"
-    CSV_VOLUME_PATH: str = "./data/csv"
+    CSV_VOLUME_PATH: str = "/data/csv"
     SYNC_PPD: bool = False
 
     # Land Registry API Configuration
