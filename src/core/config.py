@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
 
+    # Security
+    SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 525600  # 1 year (minutes)
+
 
 # Global settings instance
 settings = Settings()

@@ -16,7 +16,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.db.base import Base, engine
-from src.models import Agency, FraudMatch, PPDIngestHistory, PropertyListing  # noqa: F401
+from src.models import (
+    Agency,
+    FraudMatch,
+    PPDIngestHistory,
+    PPDUploadJob,
+    PropertyListing,
+)
 
 
 async def init_db():
@@ -25,7 +31,7 @@ async def init_db():
 
     async with engine.begin() as conn:
         # Drop all tables (use with caution in production)
-        # await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.drop_all)
 
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)

@@ -9,11 +9,14 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api import deps
 from src.db.session import get_db
+from src.models.agency import Agency
 from src.schemas.agency import (
     AgencyCreate,
     AgencyListResponse,
     AgencyResponse,
+    AgencyStatsResponse,
     AgencyUpdate,
 )
 from src.services.agency_service import AgencyService
@@ -87,6 +90,23 @@ async def list_agencies(
         page_size=page_size,
     )
 
+
+@router.get(
+    "/stats",
+    response_model=AgencyStatsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get agency statistics",
+    description="Get dashboard statistics for the current agency.",
+)
+async def get_agency_stats(
+    current_agency: Agency = Depends(deps.get_current_agency),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get agency statistics for the authenticated user.
+    """
+    stats = await AgencyService.get_agency_stats(db, current_agency.id)
+    return stats
 
 @router.get(
     "/{agency_id}",
@@ -197,3 +217,4 @@ async def delete_agency(
         )
 
     logger.info(f"Agency deleted successfully: {agency_id}")
+

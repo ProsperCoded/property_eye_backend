@@ -9,7 +9,9 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api import deps
 from src.db.session import get_db
+from src.models.agency import Agency
 from src.schemas.fraud_report import FraudMatchSchema, SuspiciousMatchSummary
 from src.services.address_normalizer import AddressNormalizer
 from src.services.fraud_detector import FraudDetector
@@ -38,19 +40,20 @@ router = APIRouter(prefix="/fraud", tags=["fraud-detection"])
     """,
 )
 async def scan_for_fraud(
-    agency_id: str = Query(..., description="Agency identifier to scan"),
+    current_agency: Agency = Depends(deps.get_current_agency),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Execute Stage 1 fraud detection scan.
 
     Args:
-        agency_id: Agency identifier
+        current_agency: Authenticated agency
         db: Database session
 
     Returns:
         SuspiciousMatchSummary with all detected matches
     """
+    agency_id = current_agency.id
     logger.info(f"Starting fraud scan for agency {agency_id}")
 
     try:
@@ -73,7 +76,7 @@ async def scan_for_fraud(
 
 
 @router.get(
-    "/reports/{agency_id}",
+    "/reports",
     response_model=list[FraudMatchSchema],
     status_code=status.HTTP_200_OK,
     summary="Get fraud reports for agency",
@@ -85,7 +88,6 @@ async def scan_for_fraud(
     """,
 )
 async def get_fraud_reports(
-    agency_id: str,
     min_confidence: float = Query(None, description="Minimum confidence score filter"),
     verification_status: str = Query(
         None,
@@ -93,32 +95,36 @@ async def get_fraud_reports(
     ),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum records to return"),
+    current_agency: Agency = Depends(deps.get_current_agency),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Get fraud reports for an agency with optional filtering.
 
     Args:
-        agency_id: Agency identifier
         min_confidence: Minimum confidence score filter
         verification_status: Verification status filter
         skip: Pagination offset
         limit: Pagination limit
+        current_agency: Authenticated agency
         db: Database session
 
     Returns:
         List of FraudMatchSchema objects
     """
     from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
     from src.models.fraud_match import FraudMatch
     from src.models.property_listing import PropertyListing
 
+    agency_id = current_agency.id
     logger.info(f"Retrieving fraud reports for agency {agency_id}")
 
     try:
         # Build query
         stmt = (
             select(FraudMatch)
+            .options(joinedload(FraudMatch.property_listing))
             .join(PropertyListing)
             .where(PropertyListing.agency_id == agency_id)
         )

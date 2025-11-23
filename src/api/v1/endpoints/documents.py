@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api import deps
 from src.db.session import get_db
 from src.models.agency import Agency
 from src.models.property_listing import PropertyListing
@@ -76,16 +77,17 @@ def parse_date(date_value) -> datetime.date:
     """,
 )
 async def upload_document(
-    agency_id: str = Form(..., description="Agency identifier"),
     field_mapping: str = Form(
         ..., description="JSON string mapping agency columns to system fields"
     ),
     file: UploadFile = File(..., description="Document file (CSV, Excel, or PDF)"),
+    current_agency: Agency = Depends(deps.get_current_agency),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Upload and process agency document.
     """
+    agency_id = current_agency.id
     logger.info(f"Received document upload for agency {agency_id}")
 
     # Parse field mapping from JSON string
@@ -100,10 +102,11 @@ async def upload_document(
         )
 
     # Validate field mapping contains all required fields
+    # The frontend sends { system_field: csv_header }
     missing_fields = [
         field
         for field in config.REQUIRED_FIELDS
-        if field not in field_mapping_dict.values()
+        if field not in field_mapping_dict.keys()
     ]
 
     if missing_fields:
@@ -112,17 +115,9 @@ async def upload_document(
             detail=f"Field mapping missing required fields: {', '.join(missing_fields)}",
         )
 
-    # Get or create agency
-    stmt = select(Agency).where(Agency.id == agency_id)
-    result = await db.execute(stmt)
-    agency = result.scalar_one_or_none()
-
-    if not agency:
-        # Create placeholder agency for POC
-        agency = Agency(id=agency_id, name=f"Agency {agency_id}")
-        db.add(agency)
-        await db.commit()
-        logger.info(f"Created new agency: {agency_id}")
+    # Invert mapping for pandas rename: {system_field: csv_header} -> {csv_header: system_field}
+    # This is required because pandas.rename expects {old_name: new_name}
+    pandas_mapping = {v: k for k, v in field_mapping_dict.items()}
 
     # Save uploaded file temporarily
     file_extension = Path(file.filename).suffix
@@ -141,10 +136,10 @@ async def upload_document(
 
         # Parse document
         parser = DocumentParser()
-        df: pd.DataFrame     = await parser.parse(
+        df: pd.DataFrame = await parser.parse(
             file_path=temp_file_path,
             file_type=file_extension,
-            field_mapping=field_mapping_dict,
+            field_mapping=pandas_mapping,
         )
 
         logger.info(f"Parsed {len(df)} records from document")

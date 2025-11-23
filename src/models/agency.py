@@ -20,6 +20,9 @@ class Agency(Base):
     Attributes:
         id: Unique identifier (UUID)
         name: Agency name
+        username: Agency username
+        hashed_password: Agency hashed password
+        access_token: Agency access token
         created_at: Timestamp of agency creation
         property_listings: Relationship to PropertyListing model
     """
@@ -28,6 +31,9 @@ class Agency(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    access_token = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships

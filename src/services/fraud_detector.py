@@ -231,6 +231,8 @@ class FraudDetector:
             # Refresh to get IDs and relationships
             for match in matches:
                 await db.refresh(match)
+                # Manually set the relationship to avoid lazy load later
+                match.property_listing = property
 
         return matches
 

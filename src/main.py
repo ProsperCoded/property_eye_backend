@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.v1.endpoints import (
     agencies,
+    auth,
     documents,
     fraud_reports,
     ppd_upload,
@@ -68,6 +69,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(agencies.router, prefix=settings.API_V1_PREFIX)
 app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
 app.include_router(fraud_reports.router, prefix=settings.API_V1_PREFIX)

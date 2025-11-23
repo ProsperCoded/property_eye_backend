@@ -9,6 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.agency import Agency
+from src.models.property_listing import PropertyListing
+from src.models.fraud_match import FraudMatch
 from src.schemas.agency import AgencyCreate, AgencyUpdate
 
 
@@ -133,3 +135,53 @@ class AgencyService:
         await db.delete(agency)
         await db.commit()
         return True
+
+    @staticmethod
+    async def get_agency_stats(db: AsyncSession, agency_id: str) -> dict:
+        """
+        Get statistics for an agency.
+        """
+        # Total listings
+        listings_stmt = select(func.count()).select_from(PropertyListing).where(
+            PropertyListing.agency_id == agency_id
+        )
+        listings_result = await db.execute(listings_stmt)
+        total_listings = listings_result.scalar() or 0
+
+        # Suspicious matches
+        suspicious_stmt = (
+            select(func.count())
+            .select_from(FraudMatch)
+            .join(PropertyListing)
+            .where(
+                PropertyListing.agency_id == agency_id,
+                FraudMatch.verification_status == "suspicious"
+            )
+        )
+        suspicious_result = await db.execute(suspicious_stmt)
+        suspicious_matches = suspicious_result.scalar() or 0
+
+        # Confirmed fraud
+        fraud_stmt = (
+            select(FraudMatch)
+            .join(PropertyListing)
+            .where(
+                PropertyListing.agency_id == agency_id,
+                FraudMatch.verification_status == "confirmed_fraud"
+            )
+        )
+        fraud_result = await db.execute(fraud_stmt)
+        fraud_matches = fraud_result.scalars().all()
+        confirmed_fraud_count = len(fraud_matches)
+
+        # Potential savings (1.5% of property value)
+        potential_savings = sum(
+            (match.ppd_price or 0) * 0.015 for match in fraud_matches
+        )
+
+        return {
+            "total_listings": total_listings,
+            "suspicious_matches": suspicious_matches,
+            "confirmed_fraud": confirmed_fraud_count,
+            "potential_savings": potential_savings,
+        }
