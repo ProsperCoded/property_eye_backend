@@ -243,7 +243,8 @@ class PPDService:
         except Exception as e:
             logger.error(f"DuckDB query failed: {str(e)}")
             return pd.DataFrame()
-) -> Path:
+
+    def _get_parquet_path(self, year: int) -> Path:
         """
         Generate partitioned Parquet file path.
 
@@ -254,8 +255,7 @@ class PPDService:
             Path to Parquet file
         """
         partition_dir = self.volume_path / f"year={year}"
-        filename = f"ppd_{year/ f"year={year}" / f"month={month:02d}"
-        filename = f"ppd_{year}{month:02d}.parquet"
+        filename = f"ppd_{year}.parquet"
         return partition_dir / filename
 
     def _build_full_address(self, row: pd.Series) -> str:
