@@ -52,7 +52,6 @@ CHUNK_SIZE = 10 * 1024 * 1024
 )
 async def upload_ppd_csv(
     year: int = Form(..., ge=1995, le=2030, description="PPD data year"),
-    month: int = Form(..., ge=1, le=12, description="PPD data month"),
     file: UploadFile = File(..., description="PPD CSV file"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -69,10 +68,15 @@ async def upload_ppd_csv(
     csv_volume = Path(config.CSV_VOLUME_PATH)
     csv_volume.mkdir(parents=True, exist_ok=True)
 
-    safe_filename = f"pp-{year}-{month:02d}-{upload_id}.csv"
+    # Format: ppd-DD-MM-YYYY-XXXX.csv
+    now = datetime.utcnow()
+    safe_filename = f"ppd-{now.day:02d}-{now.month:02d}-{now.year}-{upload_id}.csv"
     csv_path = csv_volume / safe_filename
 
-    logger.info(f"Starting PPD upload: {safe_filename} (year={year}, month={month})")
+    # Default month to 0 as we are now using year-only partitioning
+    month = 0
+
+    logger.info(f"Starting PPD upload: {safe_filename} (year={year})")
 
     try:
         total_bytes = 0

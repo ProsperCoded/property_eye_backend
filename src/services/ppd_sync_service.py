@@ -104,8 +104,9 @@ class PPDSyncService:
 
                         if ingest_summary.successful > 0:
                             # Record in history
+                            # Updated to use year-only partitioning
                             parquet_path = self.ppd_service._get_parquet_path(
-                                year, month
+                                year
                             )
 
                             history_record = PPDIngestHistory(

@@ -56,8 +56,9 @@ class PPDUploadService:
 
                 if ingest_summary.successful > 0:
                     # Record in history
+                    # Updated to use year-only partitioning
                     parquet_path = self.ppd_service._get_parquet_path(
-                        job.year, job.month
+                        job.year
                     )
 
                     history_record = PPDIngestHistory(

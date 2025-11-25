@@ -19,7 +19,7 @@ class FraudDetectionConfig:
     CSV_VOLUME_PATH: str = field(default="./data/csv")
     SYNC_PPD: bool = field(default=False)
     # PPD Filtering
-    SCAN_WINDOW_MONTHS: int = 12  # Check PPD records up to 12 months after withdrawal
+    SCAN_WINDOW_MONTHS: int = 24  # Check PPD records up to 24 months after withdrawal
 
     # Confidence Scoring
     MIN_CONFIDENCE_THRESHOLD: float = 70.0  # Store matches above this score

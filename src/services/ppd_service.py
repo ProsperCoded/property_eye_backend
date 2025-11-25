@@ -79,7 +79,7 @@ class PPDService:
         self.duckdb_conn = duckdb.connect(":memory:")
 
     async def ingest_ppd_csv(
-        self, csv_path: str, year: int, month: int
+        self, csv_path: str, year: int, month: int = 0
     ) -> IngestionSummary:
         """
         Ingest PPD CSV and convert to Parquet format.
@@ -88,13 +88,14 @@ class PPDService:
         1. Read CSV with pandas
         2. Normalize addresses
         3. Validate data
-        4. Write to partitioned Parquet file
-        5. Return summary
+        4. Sort data by transfer_date and postcode (indexing optimization)
+        5. Write to partitioned Parquet file
+        6. Return summary
 
         Args:
             csv_path: Path to PPD CSV file
             year: Year for partitioning
-            month: Month for partitioning
+            month: Month (unused for partitioning now, kept for compatibility)
 
         Returns:
             IngestionSummary with success/failure counts
@@ -121,7 +122,8 @@ class PPDService:
                 lambda addr: self.address_normalizer.normalize(addr)
             )
             df["year"] = year
-            df["month"] = month
+            # Month is no longer used for partitioning, but we can keep it in the data if needed
+            # df["month"] = month 
 
             # Validate data
             valid_df = df.dropna(
@@ -136,8 +138,11 @@ class PPDService:
                     f"{invalid_count} records missing required fields"
                 )
 
+            # Sort data for better query performance (indexing optimization)
+            valid_df = valid_df.sort_values(by=["transfer_date", "postcode"])
+
             # Write to Parquet
-            parquet_path = self._get_parquet_path(year, month)
+            parquet_path = self._get_parquet_path(year)
             parquet_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Convert to PyArrow Table for better control
@@ -207,7 +212,8 @@ class PPDService:
                 postcodes.add(prefix)
 
         # Build DuckDB query
-        parquet_pattern = str(self.volume_path / "year=*/month=*/*.parquet")
+        # Updated pattern for year-only partitioning
+        parquet_pattern = str(self.volume_path / "year=*/ppd_*.parquet")
 
         query = f"""
             SELECT *
@@ -237,19 +243,18 @@ class PPDService:
         except Exception as e:
             logger.error(f"DuckDB query failed: {str(e)}")
             return pd.DataFrame()
-
-    def _get_parquet_path(self, year: int, month: int) -> Path:
+) -> Path:
         """
         Generate partitioned Parquet file path.
 
         Args:
             year: Year for partitioning
-            month: Month for partitioning
 
         Returns:
             Path to Parquet file
         """
-        partition_dir = self.volume_path / f"year={year}" / f"month={month:02d}"
+        partition_dir = self.volume_path / f"year={year}"
+        filename = f"ppd_{year/ f"year={year}" / f"month={month:02d}"
         filename = f"ppd_{year}{month:02d}.parquet"
         return partition_dir / filename
 
