@@ -35,6 +35,7 @@ class Agency(Base):
     hashed_password = Column(String, nullable=False)
     access_token = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    alto_agency_ref = Column(String, nullable=True, index=True)
 
     # Relationships
     property_listings = relationship(
@@ -42,4 +43,4 @@ class Agency(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Agency(id={self.id}, name={self.name})>"
+        return f"<Agency(id={self.id}, name={self.name}, alto_agency_ref={self.alto_agency_ref})>"

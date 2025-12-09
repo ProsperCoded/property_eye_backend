@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.v1.endpoints import (
+    admin_alto,
     agencies,
     auth,
     documents,
@@ -16,6 +17,7 @@ from src.api.v1.endpoints import (
     ppd_upload,
     verification,
 )
+from src.api.internal import alto_router
 from src.core.config import settings
 from src.db.base import engine
 from src.utils.constants import config
@@ -75,6 +77,8 @@ app.include_router(documents.router, prefix=settings.API_V1_PREFIX)
 app.include_router(fraud_reports.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ppd_upload.router, prefix=settings.API_V1_PREFIX)
 app.include_router(verification.router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin_alto.router, prefix=settings.API_V1_PREFIX)
+app.include_router(alto_router, prefix="/internal/alto", tags=["Internal Alto"])
 
 
 @app.get("/", tags=["Health"])

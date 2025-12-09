@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
 
     # Application Settings
@@ -70,9 +70,44 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     # Security
-    SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 525600  # 1 year (minutes)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 24 * 60 * 60
+
+    # Alto (Zoopla) Configuration
+    ALTO_ENV: str = "sandbox"  # "sandbox" or "production"
+
+    # Sandbox defaults
+    ALTO_SANDBOX_AUTH_URL: str = "https://oauth.zoopla.co.uk/oauth/token"
+    ALTO_SANDBOX_API_BASE: str = "https://mobile-api.zoopla.co.uk/sandbox/v1"
+
+    # Production defaults
+    ALTO_PRODUCTION_AUTH_URL: str = "https://oauth.zoopla.co.uk/oauth/token"
+    ALTO_PRODUCTION_API_BASE: str = "https://mobile-api.zoopla.co.uk/v1"
+
+    ALTO_CLIENT_ID: str = ""
+    ALTO_CLIENT_SECRET: str = ""
+    ALTO_INTEGRATION_ID: str = ""
+
+    # # Optional: per-agency identifiers if needed globally
+    # ALTO_DEFAULT_AGENCY_ID: Optional[str] = None
+    # ALTO_DEFAULT_BRANCH_ID: Optional[str] = None
+
+    @property
+    def alto_auth_url(self) -> str:
+        return (
+            self.ALTO_SANDBOX_AUTH_URL
+            if self.ALTO_ENV == "sandbox"
+            else self.ALTO_PRODUCTION_AUTH_URL
+        )
+
+    @property
+    def alto_api_base_url(self) -> str:
+        return (
+            self.ALTO_SANDBOX_API_BASE
+            if self.ALTO_ENV == "sandbox"
+            else self.ALTO_PRODUCTION_API_BASE
+        )
 
 
 # Global settings instance

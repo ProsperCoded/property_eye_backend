@@ -114,6 +114,34 @@ class AgencyService:
         return agency
 
     @staticmethod
+    async def update_agency_alto(
+        db: AsyncSession, agency_id: str, alto_agency_ref: Optional[str]
+    ) -> Optional[Agency]:
+        """
+        Update agency Alto settings.
+
+        Args:
+            db: Database session
+            agency_id: Agency identifier
+            alto_agency_ref: New Alto Agency Ref (or None)
+
+        Returns:
+            Updated agency instance or None if not found
+        """
+        stmt = select(Agency).where(Agency.id == agency_id)
+        result = await db.execute(stmt)
+        agency = result.scalar_one_or_none()
+
+        if not agency:
+            return None
+
+        agency.alto_agency_ref = alto_agency_ref
+
+        await db.commit()
+        await db.refresh(agency)
+        return agency
+
+    @staticmethod
     async def delete_agency(db: AsyncSession, agency_id: str) -> bool:
         """
         Delete an agency.
@@ -142,8 +170,10 @@ class AgencyService:
         Get statistics for an agency.
         """
         # Total listings
-        listings_stmt = select(func.count()).select_from(PropertyListing).where(
-            PropertyListing.agency_id == agency_id
+        listings_stmt = (
+            select(func.count())
+            .select_from(PropertyListing)
+            .where(PropertyListing.agency_id == agency_id)
         )
         listings_result = await db.execute(listings_stmt)
         total_listings = listings_result.scalar() or 0
@@ -155,7 +185,7 @@ class AgencyService:
             .join(PropertyListing)
             .where(
                 PropertyListing.agency_id == agency_id,
-                FraudMatch.verification_status == "suspicious"
+                FraudMatch.verification_status == "suspicious",
             )
         )
         suspicious_result = await db.execute(suspicious_stmt)
@@ -167,7 +197,7 @@ class AgencyService:
             .join(PropertyListing)
             .where(
                 PropertyListing.agency_id == agency_id,
-                FraudMatch.verification_status == "confirmed_fraud"
+                FraudMatch.verification_status == "confirmed_fraud",
             )
         )
         fraud_result = await db.execute(fraud_stmt)
