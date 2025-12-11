@@ -47,14 +47,16 @@ async def list_alto_agencies(
             else:
                 alto_status = "Not Enabled"
 
-        # Construct detail response
-        # Using model_validate to copy base fields from ORM model
-        detail = AgencyAltoDetail.model_validate(agency, from_attributes=True)
-
-        # Explicitly set derived fields
-        detail.alto_agency_ref = alto_agency_ref
-        detail.alto_env = current_env
-        detail.alto_status = alto_status
+        # Construct detail response manually with all required fields
+        detail = AgencyAltoDetail(
+            id=agency.id,
+            name=agency.name,
+            username=agency.username,
+            created_at=agency.created_at,
+            alto_agency_ref=alto_agency_ref,
+            alto_env=current_env,
+            alto_status=alto_status,
+        )
 
         items.append(detail)
 
@@ -117,9 +119,14 @@ async def update_alto_settings(
     else:
         alto_status = "Production Connected" if new_ref else "Not Enabled"
 
-    detail = AgencyAltoDetail.model_validate(updated_agency, from_attributes=True)
-    detail.alto_agency_ref = new_ref
-    detail.alto_env = current_env
-    detail.alto_status = alto_status
+    detail = AgencyAltoDetail(
+        id=updated_agency.id,
+        name=updated_agency.name,
+        username=updated_agency.username,
+        created_at=updated_agency.created_at,
+        alto_agency_ref=new_ref,
+        alto_env=current_env,
+        alto_status=alto_status,
+    )
 
     return detail
